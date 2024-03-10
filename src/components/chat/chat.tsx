@@ -1,10 +1,10 @@
-import React from 'react'
-import ChatTopbar from './chat-topbar'
-import ChatList from './chat-list'
-import ChatBottombar from './chat-bottombar'
-import { Message, useChat } from 'ai/react';
-import { ChatRequestOptions } from 'ai';
+import React, { useState } from 'react';
+import ChatTopbar from './chat-topbar';
+import ChatList from './chat-list';
+import ChatBottombar from './chat-bottombar';
+import { useChat } from 'ai/react'; // Assume useChat is a custom hook for chat logic
 import { v4 as uuidv4 } from 'uuid';
+import { set } from 'zod';
 
 export interface ChatProps {
   chatId?: string,
@@ -16,9 +16,24 @@ export interface ChatProps {
   isLoading: boolean;
   error: undefined | Error;
   stop: () => void;
+  addMessage: (Message: any) => void;
   }
 
-export default function Chat ({ messages, input, handleInputChange, handleSubmit, isLoading, error, stop, setSelectedModel, chatId }: ChatProps) {
+export default function Chat ({ messages, input, handleInputChange, handleSubmit, isLoading, error, stop, setSelectedModel, chatId, addMessage }: ChatProps) {
+  
+  const [refresh, setRefresh] = useState(false);  
+  const { setMessages } = useChat();
+
+  addMessage = (Message) => {
+    console.log('addMessage:', Message);
+    messages.push(Message);
+    localStorage.setItem(`chat_${Message.id}`, JSON.stringify(messages));
+    input = "";
+    window.dispatchEvent(new Event("storage"));
+    setMessages([...messages]);
+    setRefresh(!refresh);
+  };
+
 
   return (
     <div className="flex flex-col justify-between w-full h-full  ">
@@ -39,6 +54,7 @@ export default function Chat ({ messages, input, handleInputChange, handleSubmit
         <ChatBottombar 
           setSelectedModel={setSelectedModel}
           messages={messages}
+          addMessage={addMessage}
           input={input}
           handleInputChange={handleInputChange}
           handleSubmit={handleSubmit}
