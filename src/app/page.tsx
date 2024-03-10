@@ -27,8 +27,10 @@ export default function Home() {
 
   React.useEffect(() => {
     if (!isLoading && !error && chatId && messages.length > 0) {
+      if (typeof window !== 'undefined') {
       // Save messages to local storage
-      localStorage.setItem(`chat_${chatId}`, JSON.stringify(messages));
+        localStorage.setItem(`chat_${chatId}`, JSON.stringify(messages));
+      }
       // Trigger the storage event to update the sidebar component
       window.dispatchEvent(new Event("storage"));
     }
