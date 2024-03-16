@@ -111,6 +111,8 @@ export function Sidebar({
         <Button
           onClick={() => {
             router.push("/");
+            // Clear messages
+            messages.splice(0, messages.length);
           }}
           variant="ghost"
           className="flex justify-between w-full h-14 text-sm xl:text-lg font-normal items-center "

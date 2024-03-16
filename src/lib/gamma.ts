@@ -55,6 +55,7 @@ class Gamma {
 
   private async summarizeWithGemma(text: string): Promise<string> {
     if (!this.chatModule) throw new Error("Gemma not initialized");
+    // TODO: Stream the response instead of returning the entire response
     return this.chatModule.generate(text);
   }
 
