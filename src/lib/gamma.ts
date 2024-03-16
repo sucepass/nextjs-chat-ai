@@ -1,4 +1,4 @@
-import { ChatModule } from "@mlc-ai/web-llm";
+import { ChatCompletionRequest, ChatModule } from "@mlc-ai/web-llm";
 
 class Gamma {
   private static instance: Gamma | null = null;
@@ -45,7 +45,7 @@ class Gamma {
     if (navigator.gpu) {
       console.log("Using Gemma...");
       // Use Gemma for summarization
-      return this.summarizeWithGemma(text);
+      return this.streamSummarizeWithGemma(text);
     } else {
       console.log("Using Gemini...");
       // Fallback to Gemini (Google AI JavaScript SDK)
@@ -55,8 +55,28 @@ class Gamma {
 
   private async summarizeWithGemma(text: string): Promise<string> {
     if (!this.chatModule) throw new Error("Gemma not initialized");
-    // TODO: Stream the response instead of returning the entire response
     return this.chatModule.generate(text);
+  }
+
+  // TODO: Return this as a stream instead of a string
+  private async streamSummarizeWithGemma(text: string): Promise<string> {
+    if (!this.chatModule) throw new Error("Gemma not initialized");
+    await this.chatModule.resetChat();
+
+    const request: ChatCompletionRequest = {
+      stream: true,
+      messages: [{ role: "user", content: text }],
+    };
+    const stream = this.chatModule.chatCompletionAsyncChunkGenerator(
+      request,
+      { temperature: 1.5 }
+    );
+    let summary = "";
+    for await (const chunk of stream) {
+      summary += chunk.choices.map((c) => c.delta.content).join("");
+      console.log("Summary so far:", summary);
+    }
+    return this.chatModule.getMessage();
   }
 
   private async summarizeWithGeminiAPI(text: string): Promise<string> {
