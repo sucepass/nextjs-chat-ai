@@ -10,6 +10,7 @@ import { Button } from "../ui/button";
 import { CaretSortIcon, HamburgerMenuIcon } from "@radix-ui/react-icons";
 import { Sidebar } from "../sidebar";
 import { Message } from "ai/react";
+import { getSelectedModel } from "@/lib/model-helper";
 
 interface ChatTopbarProps {
   setSelectedModel: React.Dispatch<React.SetStateAction<string>>;
@@ -24,34 +25,13 @@ export default function ChatTopbar({
   chatId,
   messages,
 }: ChatTopbarProps) {
-  const [models, setModels] = React.useState<string[]>(["Browser Model", "REST API"]);
+  const [models, setModels] = React.useState<string[]>(["Browser Model", "REST API", "gemma:2b"]);
   const [open, setOpen] = React.useState(false);
-  const [currentModel, setCurrentModel] = React.useState<string | null>(null);
+  const [currentModel, setCurrentModel] = React.useState<string>();
 
   useEffect(() => {
-    const getLocalStorageModel = localStorage.getItem("selectedModel");
-    if (getLocalStorageModel) {
-      setCurrentModel(getLocalStorageModel);
-      setSelectedModel(getLocalStorageModel);
-    } else {
-      // Fallback to a default model if needed
-      const defaultModel = "gemma:2b"; // Adjust as necessary
-      setCurrentModel(defaultModel);
-      setSelectedModel(defaultModel);
-
-      if (typeof window !== 'undefined') {
-        localStorage.setItem("selectedModel", defaultModel);
-      }
-    }
-
-    // Simulate fetching models from an API
-    const fetchModels = async () => {
-      // Assume additional models might be fetched here
-      setModels(prevModels => [...new Set([...prevModels, "gemma:2b"])]);
-    };
-
-    fetchModels();
-  }, [setSelectedModel]);
+    setCurrentModel(getSelectedModel());
+  }, []);
 
   const handleModelChange = (model: string) => {
     setCurrentModel(model);

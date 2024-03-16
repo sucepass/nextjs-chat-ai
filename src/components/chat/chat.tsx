@@ -17,24 +17,12 @@ export interface ChatProps {
   isLoading: boolean;
   error: undefined | Error;
   stop: () => void;
-  addMessage: (Message: any) => void;
   }
 
-export default function Chat ({ messages, input, handleInputChange, handleSubmit, isLoading, error, stop, setSelectedModel, chatId, addMessage }: ChatProps) {
+export default function Chat ({ messages, input, handleInputChange, handleSubmit, isLoading, error, stop, setSelectedModel, chatId }: ChatProps) {
   
   const [refresh, setRefresh] = useState(false);  
   const { setMessages } = useChat();
-
-  addMessage = (Message) => {
-    console.log('addMessage:', Message);
-    messages.push(Message);
-    localStorage.setItem(`chat_${Message.id}`, JSON.stringify(messages));
-    input = "";
-    window.dispatchEvent(new Event("storage"));
-    setMessages([...messages]);
-    setRefresh(!refresh);
-  };
-
 
   return (
     <div className="flex flex-col justify-between w-full h-full  ">
@@ -55,7 +43,6 @@ export default function Chat ({ messages, input, handleInputChange, handleSubmit
         <ChatBottombar 
           setSelectedModel={setSelectedModel}
           messages={messages}
-          addMessage={addMessage}
           input={input}
           handleInputChange={handleInputChange}
           handleSubmit={handleSubmit}
