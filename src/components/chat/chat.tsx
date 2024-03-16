@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import ChatTopbar from './chat-topbar';
 import ChatList from './chat-list';
 import ChatBottombar from './chat-bottombar';
-import { useChat } from 'ai/react'; // Assume useChat is a custom hook for chat logic
+import { Message, useChat } from 'ai/react';
 import { v4 as uuidv4 } from 'uuid';
 import { set } from 'zod';
+import { ChatRequestOptions } from 'ai';
 
 export interface ChatProps {
   chatId?: string,
