@@ -37,7 +37,9 @@ class Gamma {
     }
   }
 
-  public async summarize(text: string): Promise<string> {
+  public async summarize(
+    text: string
+  ): Promise<AsyncGenerator<string> | string> {
     if (!this.isInitialized) {
       this.isInitialized = this.initializeGemma();
     }
@@ -53,13 +55,16 @@ class Gamma {
     }
   }
 
+  // Doesn't stream the response, just returns the final summary
   private async summarizeWithGemma(text: string): Promise<string> {
     if (!this.chatModule) throw new Error("Gemma not initialized");
     return this.chatModule.generate(text);
   }
 
-  // TODO: Return this as a stream instead of a string
-  private async streamSummarizeWithGemma(text: string): Promise<string> {
+  // Returns as AsyncGenerator to stream the response, just like chatCompletionAsyncChunkGenerator in web-llm
+  private async *streamSummarizeWithGemma(
+    text: string
+  ): AsyncGenerator<string> {
     if (!this.chatModule) throw new Error("Gemma not initialized");
     await this.chatModule.resetChat();
 
@@ -67,16 +72,15 @@ class Gamma {
       stream: true,
       messages: [{ role: "user", content: text }],
     };
-    const stream = this.chatModule.chatCompletionAsyncChunkGenerator(
-      request,
-      { temperature: 1.5 }
-    );
-    let summary = "";
+
+    const stream = this.chatModule.chatCompletionAsyncChunkGenerator(request, {
+      temperature: 0.7,
+    });
+
+    // Yield each chunk of the response as it arrives
     for await (const chunk of stream) {
-      summary += chunk.choices.map((c) => c.delta.content).join("");
-      console.log("Summary so far:", summary);
+      yield chunk.choices.map((c) => c.delta.content).join("");
     }
-    return this.chatModule.getMessage();
   }
 
   private async summarizeWithGeminiAPI(text: string): Promise<string> {

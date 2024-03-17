@@ -61,14 +61,23 @@ export default function Page({ params }: { params: { id: string } }) {
           setGamma(gammaInstance);
         }
 
-        // Generate a response using the Browser Model
-        // console.log('Processing message with Browser Model:', input);
-        const response = gamma ? await gamma.summarize(input) : ""; // TODO: needs to show in UI
+        // Generate a response
+        const responseGenerator = gamma
+          ? await gamma.summarize(input)
+          : (async function* () {})();
+        console.log("Response from Browser Model:", responseGenerator);
 
-        console.log("Response from Browser Model:", response);
+        let responseMessage = "";
+        // Display response chunks as they arrive and append them to the message
+        for await (const chunk of responseGenerator) {
+          responseMessage += chunk;
 
-        // setNewMessages({ role: "user", content: response, id: chatId });
-        addMessage({ role: "assistant", content: response, id: chatId });
+          window.dispatchEvent(new Event("storage"));
+          setMessages([
+            ...messages,
+            { role: "assistant", content: responseMessage, id: chatId },
+          ]);
+        }
       } catch (error) {
         console.error("Error processing message with Browser Model:", error);
       }
