@@ -13,10 +13,13 @@ import { Input } from "@/components/ui/input";
 import UsernameForm from "@/components/username-form";
 import Gamma from "@/lib/gamma";
 import { getSelectedModel } from "@/lib/model-helper";
+import { ChatOllama } from "@langchain/community/chat_models/ollama";
+import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import { BytesOutputParser } from "@langchain/core/output_parsers";
 import { ChatRequestOptions } from "ai";
-import { useChat } from "ai/react";
+import { Message, useChat } from "ai/react";
 import { useRouter } from "next/navigation";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 export default function Home() {
@@ -36,7 +39,8 @@ export default function Home() {
   );
   const [open, setOpen] = React.useState(false);
   const [gamma, setGamma] = React.useState<Gamma | null>(null);
-  const router = useRouter();
+  const [ollama, setOllama] = useState<ChatOllama>();
+  const env = process.env.NODE_ENV;
 
   React.useEffect(() => {
     if (!isLoading && !error && chatId && messages.length > 0) {
@@ -50,11 +54,19 @@ export default function Home() {
   }, [messages, chatId, isLoading, error]);
 
   useEffect(() => {
+    if (env === "production") {
+      const newOllama = new ChatOllama({
+        baseUrl: "http://localhost:11434",
+        model: selectedModel,
+      });
+      setOllama(newOllama);
+    }
+
     console.log("selectedModel:", selectedModel);
     if (!localStorage.getItem("ollama_user")) {
       setOpen(true);
     }
-  }, []);
+  }, [selectedModel]);
 
   useEffect(() => {
     if (selectedModel === "Browser Model") {
@@ -62,13 +74,49 @@ export default function Home() {
       const gammaInstance = Gamma.getInstance();
       setGamma(gammaInstance);
     }
-  }, [selectedModel]);
+  }, [setSelectedModel, selectedModel]);
 
   const addMessage = (Message: any) => {
     console.log("addMessage:", Message);
     messages.push(Message);
     window.dispatchEvent(new Event("storage"));
     setMessages([...messages]);
+  };
+
+  // Function to handle chatting with Ollama in production (client side)
+  const handleSubmitProduction = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault();
+
+    addMessage({ role: "user", content: input, id: chatId });
+
+    if (ollama) {
+      const parser = new BytesOutputParser();
+
+      console.log(messages);
+      const stream = await ollama
+        .pipe(parser)
+        .stream(
+          (messages as Message[]).map((m) =>
+            m.role == "user"
+              ? new HumanMessage(m.content)
+              : new AIMessage(m.content)
+          )
+        );
+
+      const decoder = new TextDecoder();
+
+      let responseMessage = "";
+      for await (const chunk of stream) {
+        const decodedChunk = decoder.decode(chunk);
+        responseMessage += decodedChunk;
+      }
+      setMessages([
+        ...messages,
+        { role: "assistant", content: responseMessage, id: chatId },
+      ]);
+    }
   };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -95,18 +143,18 @@ export default function Home() {
         const responseGenerator = gamma
           ? await gamma.summarize(input)
           : (async function* () {})();
-        console.log(
-          "Response from Browser Model:",
-          responseGenerator
-        );
+        console.log("Response from Browser Model:", responseGenerator);
 
         let responseMessage = "";
         // Display response chunks as they arrive and append them to the message
         for await (const chunk of responseGenerator) {
           responseMessage += chunk;
-          
+
           window.dispatchEvent(new Event("storage"));
-          setMessages([...messages, { role: "assistant", content: responseMessage, id: chatId }]);
+          setMessages([
+            ...messages,
+            { role: "assistant", content: responseMessage, id: chatId },
+          ]);
         }
       } catch (error) {
         console.error("Error processing message with Browser Model:", error);
@@ -123,8 +171,13 @@ export default function Home() {
         },
       };
 
-      // Call the handleSubmit function with the options
-      handleSubmit(e, requestOptions);
+      if (env === "production" && selectedModel !== "REST API") {
+        handleSubmitProduction(e);
+      } else {
+        // use the /api/chat route
+        // Call the handleSubmit function with the options
+        handleSubmit(e, requestOptions);
+      }
     }
   };
 
