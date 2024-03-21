@@ -33,7 +33,7 @@ To use the web interface, these requisites must be met:
 1. Download [Ollama](https://ollama.com/download) and have it running. Or run it in a Docker container. Check the [docs](https://github.com/ollama/ollama) for instructions.
 2. Node.js (18+) and npm is required. [Download](https://nodejs.org/en/download)
 
-# Installation 📖
+# Installation to run locally 📖
 
 To install and run a local environment of the web interface, follow the instructions below.
 
@@ -74,6 +74,27 @@ npm run dev
 ```
 
 **5. Go to [localhost:3000](http://localhost:3000) and start chatting with your favourite model!**
+
+# Deploy to Vercel ✨
+
+If you wish to deploy this to Vercel, please follow the instructions below.
+
+**1. You'll need to set your [OLLAMA_ORIGINS](https://github.com/ollama/ollama/blob/main/docs/faq.md) environment variable on your machine that is running Ollama :**
+
+```
+OLLAMA_ORIGINS="https://your-app.vercel.app/"
+```
+OR 
+```
+OLLAMA_ORIGINS="*"
+```
+
+**2. Remember to set your Vercel environmental variables too:**
+
+```
+OLLAMA_URL="http://localhost:11434"
+GEMINI_API_KEY="api_key"
+```
 
 # Upcoming features
 
