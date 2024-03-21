@@ -1,10 +1,11 @@
-import React from 'react'
-import ChatTopbar from './chat-topbar'
-import ChatList from './chat-list'
-import ChatBottombar from './chat-bottombar'
+import React, { useState } from 'react';
+import ChatTopbar from './chat-topbar';
+import ChatList from './chat-list';
+import ChatBottombar from './chat-bottombar';
 import { Message, useChat } from 'ai/react';
-import { ChatRequestOptions } from 'ai';
 import { v4 as uuidv4 } from 'uuid';
+import { set } from 'zod';
+import { ChatRequestOptions } from 'ai';
 
 export interface ChatProps {
   chatId?: string,
@@ -19,6 +20,9 @@ export interface ChatProps {
   }
 
 export default function Chat ({ messages, input, handleInputChange, handleSubmit, isLoading, error, stop, setSelectedModel, chatId }: ChatProps) {
+  
+  const [refresh, setRefresh] = useState(false);  
+  const { setMessages } = useChat();
 
   return (
     <div className="flex flex-col justify-between w-full h-full  ">

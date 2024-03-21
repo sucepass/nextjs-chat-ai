@@ -1,10 +1,11 @@
 "use client";
 
 import { ChatLayout } from "@/components/chat/chat-layout";
+import Gamma from "@/lib/gamma";
+import { getSelectedModel } from "@/lib/model-helper";
 import { ChatRequestOptions } from "ai";
 import { useChat } from "ai/react";
-import React from "react";
-import { v4 as uuidv4 } from "uuid";
+import React, { useEffect } from "react";
 
 export default function Page({ params }: { params: { id: string } }) {
   const {
@@ -18,7 +19,18 @@ export default function Page({ params }: { params: { id: string } }) {
     setMessages,
   } = useChat();
   const [chatId, setChatId] = React.useState<string>("");
-  const [selectedModel, setSelectedModel] = React.useState<string>("mistral");
+  const [selectedModel, setSelectedModel] = React.useState<string>(
+    getSelectedModel()
+  );
+  const [gamma, setGamma] = React.useState<Gamma | null>(null);
+
+  useEffect(() => {
+    if (selectedModel === "Browser Model") {
+      console.log("Selected model: Browser");
+      const gammaInstance = Gamma.getInstance();
+      setGamma(gammaInstance);
+    }
+  }, [selectedModel]);
 
   React.useEffect(() => {
     if (params.id) {
@@ -29,24 +41,62 @@ export default function Page({ params }: { params: { id: string } }) {
     }
   }, [setMessages]);
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
+  const addMessage = (Message: any) => {
+    console.log("addMessage:", Message);
+    messages.push(Message);
+    window.dispatchEvent(new Event("storage"));
     setMessages([...messages]);
-
-    // Prepare the options object with additional body data, to pass the model.
-    const requestOptions: ChatRequestOptions = {
-      options: {
-        body: {
-          selectedModel: selectedModel,
-        },
-      },
-    };
-
-    // Call the handleSubmit function with the options
-    handleSubmit(e, requestOptions);
   };
 
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (selectedModel === "Browser Model") {
+      try {
+        // Add the user message to the chat
+        addMessage({ role: "user", content: input, id: chatId });
+
+        if (gamma === null) {
+          const gammaInstance = Gamma.getInstance();
+          setGamma(gammaInstance);
+        }
+
+        // Generate a response
+        const responseGenerator = gamma
+          ? await gamma.summarize(input)
+          : (async function* () {})();
+        console.log("Response from Browser Model:", responseGenerator);
+
+        let responseMessage = "";
+        // Display response chunks as they arrive and append them to the message
+        for await (const chunk of responseGenerator) {
+          responseMessage += chunk;
+
+          window.dispatchEvent(new Event("storage"));
+          setMessages([
+            ...messages,
+            { role: "assistant", content: responseMessage, id: chatId },
+          ]);
+        }
+      } catch (error) {
+        console.error("Error processing message with Browser Model:", error);
+      }
+    } else {
+      setMessages([...messages]);
+
+      // Prepare the options object with additional body data, to pass the model.
+      const requestOptions: ChatRequestOptions = {
+        options: {
+          body: {
+            selectedModel: selectedModel,
+          },
+        },
+      };
+
+      // Call the handleSubmit function with the options
+      handleSubmit(e, requestOptions);
+    }
+  };
   // When starting a new chat, append the messages to the local storage
   React.useEffect(() => {
     if (!isLoading && !error && messages.length > 0) {
