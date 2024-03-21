@@ -31,6 +31,25 @@ export default function ChatTopbar({
 
   useEffect(() => {
     setCurrentModel(getSelectedModel());
+
+    const env = process.env.NODE_ENV;
+
+    const fetchModels = async () => {
+      if (env === "production") {
+        const fetchedModels = await fetch("http://localhost:11434/api/tags");
+        const json = await fetchedModels.json();
+        const apiModels = json.models.map((model) => model.name);
+        setModels(["Browser Model", "REST API", ...apiModels]);
+      } 
+      else {
+        const fetchedModels = await fetch("/api/tags") 
+        const json = await fetchedModels.json();
+        console.log(json);
+        const apiModels = json.models.map(model => model.name); // Extracting only the "name" property from each model object
+        setModels(["Browser Model", "REST API", ...apiModels]);
+    }
+    }
+    fetchModels();
   }, []);
 
   const handleModelChange = (model: string) => {
