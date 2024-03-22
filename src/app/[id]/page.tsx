@@ -46,8 +46,8 @@ export default function Page({ params }: { params: { id: string } }) {
       const gammaInstance = Gamma.getInstance();
       setGamma(gammaInstance);
     }
-  }, [selectedModel]);
-
+  }, [setSelectedModel, selectedModel]);
+  
   React.useEffect(() => {
     if (params.id) {
       const item = localStorage.getItem(`chat_${params.id}`);
