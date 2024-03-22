@@ -27,6 +27,7 @@ export default function Home() {
     messages,
     input,
     handleInputChange,
+    setInput,
     handleSubmit,
     isLoading,
     error,
@@ -90,6 +91,7 @@ export default function Home() {
     e.preventDefault();
 
     addMessage({ role: "user", content: input, id: chatId });
+    setInput("");
 
     if (ollama) {
       const parser = new BytesOutputParser();
@@ -133,6 +135,7 @@ export default function Home() {
       try {
         // Add the user message to the chat
         addMessage({ role: "user", content: input, id: chatId });
+        setInput("");
 
         if (gamma === null) {
           const gammaInstance = Gamma.getInstance();
