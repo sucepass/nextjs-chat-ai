@@ -3,9 +3,12 @@
 import { ChatLayout } from "@/components/chat/chat-layout";
 import Gamma from "@/lib/gamma";
 import { getSelectedModel } from "@/lib/model-helper";
+import { ChatOllama } from "@langchain/community/chat_models/ollama";
+import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import { BytesOutputParser } from "@langchain/core/output_parsers";
 import { ChatRequestOptions } from "ai";
-import { useChat } from "ai/react";
-import React, { useEffect } from "react";
+import { Message, useChat } from "ai/react";
+import React, { useEffect, useState } from "react";
 
 export default function Page({ params }: { params: { id: string } }) {
   const {
@@ -17,12 +20,25 @@ export default function Page({ params }: { params: { id: string } }) {
     error,
     stop,
     setMessages,
+    setInput,
   } = useChat();
   const [chatId, setChatId] = React.useState<string>("");
   const [selectedModel, setSelectedModel] = React.useState<string>(
     getSelectedModel()
   );
   const [gamma, setGamma] = React.useState<Gamma | null>(null);
+  const [ollama, setOllama] = useState<ChatOllama>();
+  const env = process.env.NODE_ENV;
+
+  useEffect(() => {
+    if (env === "production") {
+      const newOllama = new ChatOllama({
+        baseUrl: "http://localhost:11434",
+        model: selectedModel,
+      });
+      setOllama(newOllama);
+    }
+  }, [selectedModel]);
 
   useEffect(() => {
     if (selectedModel === "Browser Model") {
@@ -48,6 +64,43 @@ export default function Page({ params }: { params: { id: string } }) {
     setMessages([...messages]);
   };
 
+  // Function to handle chatting with Ollama in production (client side)
+  const handleSubmitProduction = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault();
+
+    addMessage({ role: "user", content: input, id: chatId });
+    setInput("");
+
+    if (ollama) {
+      const parser = new BytesOutputParser();
+
+      console.log(messages);
+      const stream = await ollama
+        .pipe(parser)
+        .stream(
+          (messages as Message[]).map((m) =>
+            m.role == "user"
+              ? new HumanMessage(m.content)
+              : new AIMessage(m.content)
+          )
+        );
+
+      const decoder = new TextDecoder();
+
+      let responseMessage = "";
+      for await (const chunk of stream) {
+        const decodedChunk = decoder.decode(chunk);
+        responseMessage += decodedChunk;
+      }
+      setMessages([
+        ...messages,
+        { role: "assistant", content: responseMessage, id: chatId },
+      ]);
+    }
+  };
+
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -55,6 +108,7 @@ export default function Page({ params }: { params: { id: string } }) {
       try {
         // Add the user message to the chat
         addMessage({ role: "user", content: input, id: chatId });
+        setInput("");
 
         if (gamma === null) {
           const gammaInstance = Gamma.getInstance();
@@ -93,8 +147,13 @@ export default function Page({ params }: { params: { id: string } }) {
         },
       };
 
-      // Call the handleSubmit function with the options
-      handleSubmit(e, requestOptions);
+      if (env === "production" && selectedModel !== "REST API") {
+        handleSubmitProduction(e);
+      } else {
+        // use the /api/chat route
+        // Call the handleSubmit function with the options
+        handleSubmit(e, requestOptions);
+      }
     }
   };
   // When starting a new chat, append the messages to the local storage
