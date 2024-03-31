@@ -15,11 +15,12 @@ export interface ChatProps {
   handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   handleSubmit: (e: React.FormEvent<HTMLFormElement>, chatRequestOptions?: ChatRequestOptions) => void;
   isLoading: boolean;
+  loadingSubmit?: boolean;
   error: undefined | Error;
   stop: () => void;
   }
 
-export default function Chat ({ messages, input, handleInputChange, handleSubmit, isLoading, error, stop, setSelectedModel, chatId }: ChatProps) {
+export default function Chat ({ messages, input, handleInputChange, handleSubmit, isLoading, error, stop, setSelectedModel, chatId, loadingSubmit }: ChatProps) {
   
   const [refresh, setRefresh] = useState(false);  
   const { setMessages } = useChat();
@@ -36,6 +37,7 @@ export default function Chat ({ messages, input, handleInputChange, handleSubmit
           handleInputChange={handleInputChange}
           handleSubmit={handleSubmit}
           isLoading={isLoading}
+          loadingSubmit={loadingSubmit}
           error={error}
           stop={stop}
         />

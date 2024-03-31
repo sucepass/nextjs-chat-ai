@@ -9,6 +9,7 @@ import { BytesOutputParser } from "@langchain/core/output_parsers";
 import { ChatRequestOptions } from "ai";
 import { Message, useChat } from "ai/react";
 import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function Page({ params }: { params: { id: string } }) {
   const {
@@ -21,7 +22,17 @@ export default function Page({ params }: { params: { id: string } }) {
     stop,
     setMessages,
     setInput,
-  } = useChat();
+  } = useChat({
+    onResponse: (response) => {
+      if (response) {
+        setLoadingSubmit(false);
+      }
+    },
+    onError: (error) => {
+      setLoadingSubmit(false);
+      toast.error("An error occurred. Please try again.");
+    },
+  });
   const [chatId, setChatId] = React.useState<string>("");
   const [selectedModel, setSelectedModel] = React.useState<string>(
     getSelectedModel()
@@ -29,6 +40,7 @@ export default function Page({ params }: { params: { id: string } }) {
   const [gamma, setGamma] = React.useState<Gamma | null>(null);
   const [ollama, setOllama] = useState<ChatOllama>();
   const env = process.env.NODE_ENV;
+  const [loadingSubmit, setLoadingSubmit] = React.useState(false);
 
   useEffect(() => {
     if (env === "production") {
@@ -74,7 +86,8 @@ export default function Page({ params }: { params: { id: string } }) {
     setInput("");
 
     if (ollama) {
-      const parser = new BytesOutputParser();
+      try {
+        const parser = new BytesOutputParser();
 
       console.log(messages);
       const stream = await ollama
@@ -98,11 +111,17 @@ export default function Page({ params }: { params: { id: string } }) {
         ...messages,
         { role: "assistant", content: responseMessage, id: chatId },
       ]);
+      setLoadingSubmit(false);
+    } catch (error) {
+      toast.error("An error occurred. Please try again.");
+      setLoadingSubmit(false);
+    }
     }
   };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoadingSubmit(true);
 
     if (selectedModel === "Browser Model") {
       try {
@@ -131,6 +150,7 @@ export default function Page({ params }: { params: { id: string } }) {
             ...messages,
             { role: "assistant", content: responseMessage, id: chatId },
           ]);
+          setLoadingSubmit(false);
         }
       } catch (error) {
         console.error("Error processing message with Browser Model:", error);
@@ -175,6 +195,7 @@ export default function Page({ params }: { params: { id: string } }) {
         handleInputChange={handleInputChange}
         handleSubmit={onSubmit}
         isLoading={isLoading}
+        loadingSubmit={loadingSubmit}
         error={error}
         stop={stop}
         navCollapsedSize={10}

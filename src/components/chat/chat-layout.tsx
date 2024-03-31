@@ -32,6 +32,7 @@ export function ChatLayout({
   handleInputChange,
   handleSubmit,
   isLoading,
+  loadingSubmit,
   error,
   stop,
   chatId,
@@ -115,6 +116,7 @@ export function ChatLayout({
            handleInputChange={handleInputChange}
            handleSubmit={handleSubmit}
            isLoading={isLoading}
+           loadingSubmit={loadingSubmit}
            error={error}
            stop={stop}
         />
