@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { ChatProps } from "./chat";
 import Image from "next/image";
 import CodeDisplayBlock from "../code-display-block";
+import { experimental_AssistantResponse } from "ai";
 
 export default function ChatList({
   messages,
@@ -15,6 +16,7 @@ export default function ChatList({
   isLoading,
   error,
   stop,
+  loadingSubmit
 }: ChatProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const [name, setName] = React.useState<string>("");
@@ -62,7 +64,7 @@ export default function ChatList({
       className="w-full overflow-y-scroll overflow-x-hidden h-full justify-end"
     >
       <div className="w-full flex flex-col overflow-x-hidden overflow-y-hidden min-h-full justify-end">
-        {messages.map((message, index) => (
+      {messages.map((message, index) => (
           <motion.div
             key={index}
             layout
@@ -140,6 +142,26 @@ export default function ChatList({
             </div>
           </motion.div>
         ))}
+        {loadingSubmit && (
+          <div className="flex pl-4 pb-4 gap-2 items-center">
+            <Avatar className="flex justify-start items-center">
+              <AvatarImage
+                src="/ollama.png"
+                alt="AI"
+                width={6}
+                height={6}
+                className="object-contain dark:invert"
+              />
+            </Avatar>
+            <div className="bg-accent p-3 rounded-md max-w-xs sm:max-w-2xl overflow-x-auto">
+            <div className="flex gap-1">
+              <span className="size-1.5 rounded-full bg-slate-700 motion-safe:animate-[bounce_1s_ease-in-out_infinite] dark:bg-slate-300"></span>
+              <span className="size-1.5 rounded-full bg-slate-700 motion-safe:animate-[bounce_0.5s_ease-in-out_infinite] dark:bg-slate-300"></span>
+              <span className="size-1.5 rounded-full bg-slate-700 motion-safe:animate-[bounce_1s_ease-in-out_infinite] dark:bg-slate-300"></span>
+            </div>
+            </div>
+          </div>
+        )}
       </div>
       <div id="anchor" ref={bottomRef}></div>
     </div>
