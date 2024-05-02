@@ -7,6 +7,7 @@ import { ChatProps } from "./chat";
 import Image from "next/image";
 import CodeDisplayBlock from "../code-display-block";
 import { experimental_AssistantResponse } from "ai";
+import { marked } from "marked";
 
 export default function ChatList({
   messages,
@@ -87,9 +88,12 @@ export default function ChatList({
             <div className="flex gap-3 items-center">
               {message.role === "user" && (
                 <div className="flex items-end gap-3">
-                  <span className="bg-accent p-3 rounded-md max-w-xs sm:max-w-2xl overflow-x-auto">
-                    {message.content}
-                  </span>
+                  {/* <span className="bg-accent p-3 rounded-md max-w-xs sm:max-w-2xl overflow-x-auto">
+                    {(message.content)}
+                  </span> */}
+
+                  <span className="bg-accent p-3 rounded-md max-w-xs sm:max-w-2xl overflow-x-auto" dangerouslySetInnerHTML={{ __html: marked.parse(message.content) }} />
+
                   <Avatar className="flex justify-start items-center overflow-hidden">
                     <AvatarImage
                       src="/"
@@ -117,10 +121,11 @@ export default function ChatList({
                   </Avatar>
                   <span className="bg-accent p-3 rounded-md max-w-xs sm:max-w-2xl overflow-x-auto">
                     {/* Check if the message content contains a code block */}
-                    {message.content.split("```").map((part, index) => {
+                    {(message.content).split("```").map((part, index) => {
                       if (index % 2 === 0) {
                         return (
-                          <React.Fragment key={index}>{part}</React.Fragment>
+                          // <React.Fragment key={index}>{part}</React.Fragment>
+                          <span dangerouslySetInnerHTML={{ __html: marked.parse(part) }} />
                         );
                       } else {
                         return (
