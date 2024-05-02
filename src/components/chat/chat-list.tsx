@@ -125,7 +125,7 @@ export default function ChatList({
                       if (index % 2 === 0) {
                         return (
                           // <React.Fragment key={index}>{part}</React.Fragment>
-                          <span dangerouslySetInnerHTML={{ __html: marked.parse(part) }} />
+                          <span key={index} dangerouslySetInnerHTML={{ __html: marked.parse(part) }} />
                         );
                       } else {
                         return (
